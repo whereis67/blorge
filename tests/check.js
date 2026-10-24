@@ -1,0 +1,5 @@
+// run in page: each lesson demo must pass its own checker; each template must build + run 300 frames without errors
+const out = [];
+for (const L of Lessons.list) { try { const r = L.check(L.demo()); out.push((r.ok ? 'PASS ' : 'FAIL ') + L.key + ': ' + r.msg); } catch (e) { out.push('ERR ' + L.key + ': ' + e.message); } }
+for (const t of Templates.LIST) { try { const p = t.make(); if (p.mode === '3d') { out.push('tpl ' + t.key + ' 3d ok'); continue; } const rt = new VM.Runtime2D(JSON.parse(JSON.stringify(p)), {}); rt.greenFlag(); for (let i = 0; i < 400; i++) { if (i % 40 === 0) rt.keyDown('space'); if (i % 40 === 5) rt.keyUp('space'); rt.step(); } out.push('tpl ' + t.key + ' threads=' + rt.threads.length + ' errors=' + JSON.stringify(rt.errors.map(e=>e.msg)) + ' pen=' + Math.round(rt.stats.penDist) + ' fx=' + rt.stats.fx + ' vars=' + JSON.stringify(Object.fromEntries(Object.entries(rt.vars).map(([k,v])=>[rt.varNames[k],v])))); } catch (e) { out.push('ERR tpl ' + t.key + ': ' + e.stack); } }
+window.__out = out.join('\n');

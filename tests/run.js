@@ -1,0 +1,5 @@
+const { chromium } = require('playwright'); const fs=require('fs'), path=require('path'); const NM=path.join(__dirname,'node_modules');
+(async()=>{ const b=await chromium.launch({args:['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist']}); const pg=await b.newPage(); const errs=[]; pg.on('pageerror',e=>errs.push(e.message));
+await pg.route('**/*',r=>{const u=r.request().url(); if(u.startsWith('http://app.local/')) return r.fulfill({body:fs.readFileSync(process.argv[2],'utf8'),contentType:'text/html'});
+ let m; if(m=u.match(/unpkg\.com\/blockly@[^/]+\/(.*)$/)) return r.fulfill({path:path.join(NM,'blockly',m[1])}); if(m=u.match(/continuous-toolbox@[^/]+\/(.*)$/)) return r.fulfill({path:path.join(NM,'@blockly/continuous-toolbox',m[1])}); if(m=u.match(/three@[^/]+\/(.*)$/)) return r.fulfill({path:path.join(NM,'three',m[1])}); return r.abort();});
+await pg.goto('http://app.local/#home'); await pg.waitForTimeout(2000); await pg.evaluate(fs.readFileSync(process.argv[3],'utf8')); console.log(await pg.evaluate(()=>window.__out)); console.log('pageerrors:',errs); await b.close(); })();
